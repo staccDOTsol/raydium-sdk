@@ -1,13 +1,25 @@
-import BN from 'bn.js'
+import BN from 'bn.js';
 
-import { TickArrayBitmapExtensionType } from '../clmm'
+import { TickArrayBitmapExtensionType } from '../clmm';
+import {
+  MAX_TICK,
+  MIN_TICK,
+} from './constants';
+import {
+  TICK_ARRAY_BITMAP_SIZE,
+  TICK_ARRAY_SIZE,
+  TickUtils,
+} from './tick';
+import { TickQuery } from './tickQuery';
+import {
+  isZero,
+  leadingZeros,
+  leastSignificantBit,
+  mostSignificantBit,
+  trailingZeros,
+} from './util';
 
-import { MAX_TICK, MIN_TICK } from './constants'
-import { TICK_ARRAY_BITMAP_SIZE, TICK_ARRAY_SIZE, TickUtils } from './tick'
-import { TickQuery } from './tickQuery'
-import { isZero, leadingZeros, leastSignificantBit, mostSignificantBit, trailingZeros } from './util'
-
-export const EXTENSION_TICKARRAY_BITMAP_SIZE = 14
+export const EXTENSION_TICKARRAY_BITMAP_SIZE = 12
 
 export class TickArrayBitmap {
   public static maxTickInTickarrayBitmap(tickSpacing: number): number {
@@ -142,7 +154,7 @@ export class TickArrayBitmapExtension {
     const tickArrayOffsetInBitmap = this.tickArrayOffsetInBitmap(tickArrayStartIndex, tickSpacing)
 
     return {
-      isInitialized: TickUtils.mergeTickArrayBitmap(tickarrayBitmap).testn(tickArrayOffsetInBitmap),
+      isInitialized: TickUtils.mergeTickArrayBitmap(tickarrayBitmap) == undefined ? false : TickUtils.mergeTickArrayBitmap(tickarrayBitmap).testn(tickArrayOffsetInBitmap),
       startIndex: tickArrayStartIndex,
     }
   }

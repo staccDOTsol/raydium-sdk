@@ -1,4 +1,7 @@
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
+import BN from 'bn.js';
+import Decimal from 'decimal.js';
+
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import {
   Connection,
   EpochInfo,
@@ -7,9 +10,7 @@ import {
   Signer,
   SystemProgram,
   TransactionInstruction,
-} from '@solana/web3.js'
-import BN from 'bn.js'
-import Decimal from 'decimal.js'
+} from '@solana/web3.js';
 
 import {
   Base,
@@ -26,9 +27,12 @@ import {
   TokenAccount,
   TransferAmountFee,
   TxVersion,
-} from '../base'
-import { getATAAddress } from '../base/pda'
-import { ApiClmmPoolsItem, ApiClmmPoolsItemStatistics } from '../baseInfo'
+} from '../base';
+import { getATAAddress } from '../base/pda';
+import {
+  ApiClmmPoolsItem,
+  ApiClmmPoolsItemStatistics,
+} from '../baseInfo';
 import {
   CacheLTA,
   getMultipleAccountsInfo,
@@ -36,10 +40,18 @@ import {
   Logger,
   splitTxAndSigners,
   TOKEN_PROGRAM_ID,
-} from '../common'
-import { Currency, CurrencyAmount, ONE, Percent, Price, Token, TokenAmount, ZERO } from '../entity'
-import { SPL_ACCOUNT_LAYOUT } from '../spl'
-
+} from '../common';
+import {
+  Currency,
+  CurrencyAmount,
+  ONE,
+  Percent,
+  Price,
+  Token,
+  TokenAmount,
+  ZERO,
+} from '../entity';
+import { SPL_ACCOUNT_LAYOUT } from '../spl';
 import {
   closePositionInstruction,
   collectRewardInstruction,
@@ -52,7 +64,7 @@ import {
   openPositionFromLiquidityInstruction,
   setRewardInstruction,
   swapInstruction,
-} from './instrument'
+} from './instrument';
 import {
   ObservationInfoLayout,
   OperationLayout,
@@ -60,9 +72,18 @@ import {
   PositionInfoLayout,
   TickArrayBitmapExtensionLayout,
   TickArrayLayout,
-} from './layout'
-import { MAX_SQRT_PRICE_X64, MIN_SQRT_PRICE_X64, U64_IGNORE_RANGE } from './utils/constants'
-import { LiquidityMath, MathUtil, SqrtPriceMath, TickMath } from './utils/math'
+} from './layout';
+import {
+  MAX_SQRT_PRICE_X64,
+  MIN_SQRT_PRICE_X64,
+  U64_IGNORE_RANGE,
+} from './utils/constants';
+import {
+  LiquidityMath,
+  MathUtil,
+  SqrtPriceMath,
+  TickMath,
+} from './utils/math';
 import {
   getPdaExBitmapAccount,
   getPdaMetadataKey,
@@ -73,11 +94,15 @@ import {
   getPdaPoolVaultId,
   getPdaProtocolPositionAddress,
   getPdaTickArrayAddress,
-} from './utils/pda'
-import { PoolUtils } from './utils/pool'
-import { PositionUtils } from './utils/position'
-import { Tick, TickArray, TickUtils } from './utils/tick'
-import { EXTENSION_TICKARRAY_BITMAP_SIZE } from './utils/tickarrayBitmap'
+} from './utils/pda';
+import { PoolUtils } from './utils/pool';
+import { PositionUtils } from './utils/position';
+import {
+  Tick,
+  TickArray,
+  TickUtils,
+} from './utils/tick';
+import { EXTENSION_TICKARRAY_BITMAP_SIZE } from './utils/tickarrayBitmap';
 
 const logger = Logger.from('Clmm')
 
@@ -485,6 +510,7 @@ export class Clmm extends Base {
     associatedOnly = true,
     checkCreateATAOwner = false,
     withMetadata = 'create',
+    direction = poolInfo.mintA < poolInfo.mintB ? 0 : 1,
     getEphemeralSigners,
     computeBudgetConfig,
     lookupTableCache,
@@ -508,6 +534,7 @@ export class Clmm extends Base {
     tickUpper: number
 
     withMetadata?: 'create' | 'no-create'
+    direction?: 0 | 1
 
     liquidity: BN
     associatedOnly?: boolean
@@ -594,6 +621,7 @@ export class Clmm extends Base {
       amountMaxA,
       amountMaxB,
       withMetadata,
+      direction,
       getEphemeralSigners,
     })
 
@@ -626,6 +654,7 @@ export class Clmm extends Base {
     associatedOnly = true,
     checkCreateATAOwner = false,
     computeBudgetConfig,
+    direction = poolInfo.mintA < poolInfo.mintB ? 0 : 1,
     withMetadata = 'create',
     makeTxVersion,
     lookupTableCache,
@@ -651,6 +680,7 @@ export class Clmm extends Base {
     base: 'MintA' | 'MintB'
     baseAmount: BN
     otherAmountMax: BN
+    direction?: 0 | 1
 
     associatedOnly?: boolean
     checkCreateATAOwner?: boolean
@@ -736,6 +766,7 @@ export class Clmm extends Base {
       otherAmountMax,
 
       withMetadata,
+      direction,
       getEphemeralSigners,
     })
 
@@ -1183,6 +1214,7 @@ export class Clmm extends Base {
   static async makeSwapBaseInInstructionSimple<T extends TxVersion>({
     connection,
     poolInfo,
+    sPoolInfo,
     ownerInfo,
 
     inputMint,
@@ -1201,6 +1233,7 @@ export class Clmm extends Base {
     lookupTableCache?: CacheLTA
     connection: Connection
     poolInfo: ClmmPoolInfo
+    sPoolInfo: ClmmPoolInfo
     ownerInfo: {
       feePayer: PublicKey
       wallet: PublicKey
@@ -1301,6 +1334,7 @@ export class Clmm extends Base {
 
     const makeSwapBaseInInstructions = this.makeSwapBaseInInstructions({
       poolInfo,
+      sPoolInfo,
       ownerInfo: {
         wallet: ownerInfo.wallet,
         tokenAccountA: ownerTokenAccountA,
@@ -1336,6 +1370,7 @@ export class Clmm extends Base {
   static async makeSwapBaseOutInstructionSimple<T extends TxVersion>({
     connection,
     poolInfo,
+    sPoolInfo,
     ownerInfo,
 
     outputMint,
@@ -1354,6 +1389,7 @@ export class Clmm extends Base {
     lookupTableCache?: CacheLTA
     connection: Connection
     poolInfo: ClmmPoolInfo
+    sPoolInfo: ClmmPoolInfo
     ownerInfo: {
       feePayer: PublicKey
       wallet: PublicKey
@@ -1454,6 +1490,7 @@ export class Clmm extends Base {
 
     const makeSwapBaseOutInstructions = this.makeSwapBaseOutInstructions({
       poolInfo,
+      sPoolInfo,
       ownerInfo: {
         wallet: ownerInfo.wallet,
         tokenAccountA: ownerTokenAccountA,
@@ -2363,13 +2400,23 @@ export class Clmm extends Base {
     initialPriceX64: BN
     startTime: BN
   }) {
-    const observationId = generatePubKey({ fromPublicKey: owner, programId })
+    const instructions: TransactionInstruction[] = []
 
     const poolId = getPdaPoolId(programId, ammConfigId, mintA.mint, mintB.mint).publicKey
+    const oppPoolId = getPdaPoolId(programId, ammConfigId, mintB.mint, mintA.mint).publicKey
+
+    const observationId = generatePubKey({ fromPublicKey: owner, programId })
+
     const mintAVault = getPdaPoolVaultId(programId, poolId, mintA.mint).publicKey
     const mintBVault = getPdaPoolVaultId(programId, poolId, mintB.mint).publicKey
+    const otherObservationId = generatePubKey({ fromPublicKey: owner, programId })
 
-    const instructions = [
+    const otherMintAVault = getPdaPoolVaultId(programId, oppPoolId, mintB.mint).publicKey
+    const otherMintBVault = getPdaPoolVaultId(programId, oppPoolId, mintA.mint).publicKey
+
+    {
+
+    const ixs = [
       SystemProgram.createAccountWithSeed({
         fromPubkey: owner,
         basePubkey: owner,
@@ -2396,13 +2443,50 @@ export class Clmm extends Base {
         startTime,
       ),
     ]
+    instructions.push(...ixs)
+    }
 
+    {
+  
+      const ixs = [
+        SystemProgram.createAccountWithSeed({
+          fromPubkey: owner,
+          basePubkey: owner,
+          seed: otherObservationId.seed,
+          newAccountPubkey: otherObservationId.publicKey,
+          lamports: await connection.getMinimumBalanceForRentExemption(ObservationInfoLayout.span),
+          space: ObservationInfoLayout.span,
+          programId,
+        }),
+        createPoolInstruction(
+          programId,
+          oppPoolId,
+          owner,
+          ammConfigId,
+          otherObservationId.publicKey,
+          mintB.mint,
+          otherMintAVault,
+          mintB.programId,
+          mintA.mint,
+          otherMintBVault,
+          mintA.programId,
+          getPdaExBitmapAccount(programId, oppPoolId).publicKey,
+          initialPriceX64,
+          startTime,
+        ),
+      ]
+      instructions.push(...ixs)
+      }
     return {
       address: {
+        otherObservaionId: otherObservationId.publicKey,
         observationId: observationId.publicKey,
         poolId,
         mintAVault,
         mintBVault,
+        otherMintAVault,
+        otherMintBVault
+
       },
       innerTransaction: {
         instructions,
@@ -2422,6 +2506,7 @@ export class Clmm extends Base {
     amountMaxA,
     amountMaxB,
     withMetadata,
+    direction,
     getEphemeralSigners,
   }: {
     poolInfo: ClmmPoolInfo
@@ -2440,6 +2525,7 @@ export class Clmm extends Base {
     amountMaxB: BN
 
     withMetadata: 'create' | 'no-create'
+    direction: 0 | 1
 
     getEphemeralSigners?: (k: number) => any
   }) {
@@ -2505,6 +2591,7 @@ export class Clmm extends Base {
       amountMaxA,
       amountMaxB,
       withMetadata,
+      direction,
 
       PoolUtils.isOverflowDefaultTickarrayBitmap(poolInfo.tickSpacing, [
         tickArrayLowerStartIndex,
@@ -2542,6 +2629,7 @@ export class Clmm extends Base {
     baseAmount,
     otherAmountMax,
     withMetadata,
+    direction,
     getEphemeralSigners,
   }: {
     poolInfo: ClmmPoolInfo
@@ -2562,6 +2650,7 @@ export class Clmm extends Base {
     baseAmount: BN
 
     otherAmountMax: BN
+    direction: 0 | 1
 
     getEphemeralSigners?: (k: number) => any
   }) {
@@ -2630,6 +2719,7 @@ export class Clmm extends Base {
       baseAmount,
 
       otherAmountMax,
+      direction,
 
       PoolUtils.isOverflowDefaultTickarrayBitmap(poolInfo.tickSpacing, [
         tickArrayLowerStartIndex,
@@ -2998,6 +3088,7 @@ export class Clmm extends Base {
 
   static makeSwapBaseInInstructions({
     poolInfo,
+    sPoolInfo,
     ownerInfo,
     inputMint,
     amountIn,
@@ -3006,7 +3097,7 @@ export class Clmm extends Base {
     remainingAccounts,
   }: {
     poolInfo: ClmmPoolInfo
-
+    sPoolInfo: ClmmPoolInfo
     ownerInfo: {
       wallet: PublicKey
       tokenAccountA: PublicKey
@@ -3032,6 +3123,7 @@ export class Clmm extends Base {
             ownerInfo.wallet,
 
             poolInfo.id,
+            sPoolInfo.id,
             poolInfo.ammConfig.id,
 
             isInputMintA ? ownerInfo.tokenAccountA : ownerInfo.tokenAccountB,
@@ -3040,16 +3132,21 @@ export class Clmm extends Base {
             isInputMintA ? poolInfo.mintA.vault : poolInfo.mintB.vault,
             isInputMintA ? poolInfo.mintB.vault : poolInfo.mintA.vault,
 
+            isInputMintA ? sPoolInfo.mintB.vault : sPoolInfo.mintA.vault,
+            isInputMintA ? sPoolInfo.mintA.vault : sPoolInfo.mintB.vault,
+
             isInputMintA ? poolInfo.mintA.mint : poolInfo.mintB.mint,
             isInputMintA ? poolInfo.mintB.mint : poolInfo.mintA.mint,
 
             remainingAccounts,
             poolInfo.observationId,
+            sPoolInfo.observationId,
             amountIn,
             amountOutMin,
             sqrtPriceLimitX64,
             true,
             getPdaExBitmapAccount(poolInfo.programId, poolInfo.id).publicKey,
+            getPdaExBitmapAccount(sPoolInfo.programId, sPoolInfo.id).publicKey,
           ),
         ],
         signers: [],
@@ -3061,6 +3158,7 @@ export class Clmm extends Base {
 
   static makeSwapBaseOutInstructions({
     poolInfo,
+    sPoolInfo,
     ownerInfo,
     outputMint,
     amountOut,
@@ -3069,7 +3167,7 @@ export class Clmm extends Base {
     remainingAccounts,
   }: {
     poolInfo: ClmmPoolInfo
-
+    sPoolInfo: ClmmPoolInfo
     ownerInfo: {
       wallet: PublicKey
       tokenAccountA: PublicKey
@@ -3095,6 +3193,7 @@ export class Clmm extends Base {
             ownerInfo.wallet,
 
             poolInfo.id,
+            sPoolInfo.id,
             poolInfo.ammConfig.id,
 
             isInputMintA ? ownerInfo.tokenAccountB : ownerInfo.tokenAccountA,
@@ -3103,16 +3202,21 @@ export class Clmm extends Base {
             isInputMintA ? poolInfo.mintB.vault : poolInfo.mintA.vault,
             isInputMintA ? poolInfo.mintA.vault : poolInfo.mintB.vault,
 
+            isInputMintA ? sPoolInfo.mintA.vault : sPoolInfo.mintB.vault,
+            isInputMintA ? sPoolInfo.mintB.vault : sPoolInfo.mintA.vault,
+
             isInputMintA ? poolInfo.mintB.mint : poolInfo.mintA.mint,
             isInputMintA ? poolInfo.mintA.mint : poolInfo.mintB.mint,
 
             remainingAccounts,
             poolInfo.observationId,
+            sPoolInfo.observationId,
             amountOut,
             amountInMax,
             sqrtPriceLimitX64,
             false,
             getPdaExBitmapAccount(poolInfo.programId, poolInfo.id).publicKey,
+            getPdaExBitmapAccount(sPoolInfo.programId, sPoolInfo.id).publicKey,
           ),
         ],
         signers: [],
@@ -4171,9 +4275,15 @@ export class Clmm extends Base {
           },
           observationId: layoutAccountInfo.observationId,
           ammConfig: {
-            ...apiPoolInfo.ammConfig,
-            id: new PublicKey(apiPoolInfo.ammConfig.id),
-          },
+            id: new PublicKey("F7JaRQaKZt25nBCqpXQvVwwUWKofrXqJiuRb1nCSiAGW"),
+            index: 0,
+            protocolFeeRate: 30,
+            tradeFeeRate: 30,
+            tickSpacing: 64,
+            fundFeeRate: 30,
+            fundOwner: "7ihN8QaTfNoDTRTQGULCzbUT3PHwPDTu5Brcu4iT2paP",
+            description: "hehe"
+          } as ClmmConfigInfo,
 
           creator: layoutAccountInfo.creator,
           programId: accountInfo.owner,

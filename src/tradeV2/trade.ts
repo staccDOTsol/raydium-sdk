@@ -747,6 +747,7 @@ export class TradeV2 extends Base {
     if (swapInfo.routeType === 'amm') {
       if (swapInfo.poolKey[0].version === 6) {
         const _poolKey = swapInfo.poolKey[0] as ClmmPoolInfo
+
         const sqrtPriceLimitX64 = inputMint.equals(_poolKey.mintA.mint)
           ? slippage > 0.5 || MIN_SQRT_PRICE_X64.add(ONE).gt(swapInfo.clmmExPriceX64[0]!.div(new BN(10)))
             ? MIN_SQRT_PRICE_X64.add(ONE)
@@ -757,6 +758,7 @@ export class TradeV2 extends Base {
 
         return Clmm.makeSwapBaseInInstructions({
           poolInfo: _poolKey,
+          sPoolInfo: _poolKey,
           ownerInfo: {
             wallet: ownerInfo.wallet,
             tokenAccountA: _poolKey.mintA.mint.equals(inputMint) ? ownerInfo.sourceToken : ownerInfo.destinationToken,

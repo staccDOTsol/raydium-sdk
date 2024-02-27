@@ -1,6 +1,10 @@
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
-import { PublicKey, TransactionInstruction } from '@solana/web3.js'
-import BN from 'bn.js'
+import BN from 'bn.js';
+
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import {
+  PublicKey,
+  TransactionInstruction,
+} from '@solana/web3.js';
 
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -9,9 +13,19 @@ import {
   RENT_PROGRAM_ID,
   SYSTEM_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
-} from '../common'
-import { ZERO, parseBigNumberish } from '../entity'
-import { bool, s32, struct, u128, u64, u8 } from '../marshmallow'
+} from '../common';
+import {
+  ZERO,
+  parseBigNumberish,
+} from '../entity';
+import {
+  bool,
+  s32,
+  struct,
+  u128,
+  u64,
+  u8,
+} from '../marshmallow';
 
 const anchorDataBuf = {
   createPool: [233, 146, 209, 142, 207, 104, 64, 188],
@@ -103,6 +117,7 @@ export function openPositionFromLiquidityInstruction(
   amountMaxA: BN,
   amountMaxB: BN,
   withMetadata: 'create' | 'no-create',
+  direction: 0 | 1,
 
   exTickArrayBitmap?: PublicKey,
 ) {
@@ -117,8 +132,11 @@ export function openPositionFromLiquidityInstruction(
     bool('withMetadata'),
     u8('optionBaseFlag'),
     bool('baseFlag'),
+    u8('direction'),
   ])
 
+  amountMaxA == new BN(0) ? amountMaxA = new BN(1000000000000000000000000000000) : null
+  amountMaxB == new BN(0) ? amountMaxB = new BN(1000000000000000000000000000000) : null
   const remainingAccounts = [
     ...(exTickArrayBitmap ? [{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }] : []),
   ]
@@ -165,6 +183,7 @@ export function openPositionFromLiquidityInstruction(
       withMetadata: withMetadata === 'create',
       baseFlag: false,
       optionBaseFlag: 0,
+      direction
     },
     data,
   )
@@ -207,6 +226,7 @@ export function openPositionFromBaseInstruction(
   baseAmount: BN,
 
   otherAmountMax: BN,
+  direction: 0 | 1,
 
   exTickArrayBitmap?: PublicKey,
 ) {
@@ -221,6 +241,7 @@ export function openPositionFromBaseInstruction(
     bool('withMetadata'),
     u8('optionBaseFlag'),
     bool('baseFlag'),
+    u8('direction')
   ])
 
   const remainingAccounts = [
@@ -255,7 +276,7 @@ export function openPositionFromBaseInstruction(
 
     ...remainingAccounts,
   ]
-
+  otherAmountMax == new BN(0) ? otherAmountMax = new BN(1000000000000000000000000000000) : null
   const data = Buffer.alloc(dataLayout.span)
   dataLayout.encode(
     {
@@ -269,6 +290,7 @@ export function openPositionFromBaseInstruction(
       withMetadata: withMetadata === 'create',
       baseFlag: base === 'MintA',
       optionBaseFlag: 1,
+      direction
     },
     data,
   )
@@ -558,15 +580,19 @@ export function swapInstruction(
   programId: PublicKey,
   payer: PublicKey,
   poolId: PublicKey,
+  sPoolId: PublicKey,
   ammConfigId: PublicKey,
   inputTokenAccount: PublicKey,
   outputTokenAccount: PublicKey,
   inputVault: PublicKey,
   outputVault: PublicKey,
+  sInputVault: PublicKey,
+  sOutputVault: PublicKey,
   inputMint: PublicKey,
   outputMint: PublicKey,
   tickArray: PublicKey[],
   observationId: PublicKey,
+  sObservationId: PublicKey,
 
   amount: BN,
   otherAmountThreshold: BN,
@@ -574,6 +600,7 @@ export function swapInstruction(
   isBaseInput: boolean,
 
   exTickArrayBitmap?: PublicKey,
+  sExTickArrayBitmap?: PublicKey,
 ) {
   const dataLayout = struct([
     u64('amount'),
@@ -584,6 +611,7 @@ export function swapInstruction(
 
   const remainingAccounts = [
     ...(exTickArrayBitmap ? [{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }] : []),
+    ...(sExTickArrayBitmap ? [{ pubkey: sExTickArrayBitmap, isSigner: false, isWritable: true }] : []),
     ...tickArray.map((i) => ({ pubkey: i, isSigner: false, isWritable: true })),
   ]
 
@@ -592,12 +620,16 @@ export function swapInstruction(
     { pubkey: ammConfigId, isSigner: false, isWritable: false },
 
     { pubkey: poolId, isSigner: false, isWritable: true },
+    { pubkey: sPoolId, isSigner: false, isWritable: true },
     { pubkey: inputTokenAccount, isSigner: false, isWritable: true },
     { pubkey: outputTokenAccount, isSigner: false, isWritable: true },
     { pubkey: inputVault, isSigner: false, isWritable: true },
     { pubkey: outputVault, isSigner: false, isWritable: true },
+    { pubkey: sInputVault, isSigner: false, isWritable: true },
+    { pubkey: sOutputVault, isSigner: false, isWritable: true },
 
     { pubkey: observationId, isSigner: false, isWritable: true },
+    { pubkey: sObservationId, isSigner: false, isWritable: true },
 
     { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
     { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },

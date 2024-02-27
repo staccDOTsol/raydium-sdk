@@ -1777,6 +1777,7 @@ export class Liquidity extends Base {
       },
       withMetadata: 'create',
       ...createPositionInfo,
+      direction: 0,
       getEphemeralSigners,
     })
 
@@ -1786,7 +1787,7 @@ export class Liquidity extends Base {
       instructionTypes: [],
     }
     if (farmInfo !== undefined) {
-      const rewardTokenAccounts = []
+      const rewardTokenAccounts: any = []
       for (const item of farmInfo.poolKeys.rewardInfos) {
         const rewardIsWsol = item.rewardMint.equals(Token.WSOL.mint)
         rewardTokenAccounts.push(

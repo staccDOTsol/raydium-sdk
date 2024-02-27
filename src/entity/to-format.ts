@@ -1,5 +1,6 @@
 import Big, { BigConstructor, BigSource, RoundingMode } from 'big.js'
 import Decimal, { Config, Numeric } from 'decimal.js-light'
+// @ts-ignore
 import _toFarmat from 'toformat'
 
 type TakeStatic<T> = { [P in keyof T]: T[P] }

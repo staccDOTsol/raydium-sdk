@@ -235,7 +235,7 @@ export class Base {
           instructions: createInfo.frontInstructions,
           instructionsType: createInfo.frontInstructionsType,
           signers: createInfo.signers,
-          amount: createInfo.amount ?? 0,
+          amount: createInfo.amount.toString() ?? (0).toString(),
         })
 
         ;(createInfo.endInstructions ?? []).push(
@@ -282,7 +282,7 @@ export class Base {
           instructions: createInfo.frontInstructions,
           instructionsType: createInfo.frontInstructionsType,
           signers: createInfo.signers,
-          amount: createInfo.amount ?? 0,
+          amount: createInfo.amount != undefined ? createInfo.amount.toString() : "0"
         })
         ;(createInfo.endInstructions ?? []).push(
           Spl.makeCloseAccountInstruction({

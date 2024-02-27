@@ -1,24 +1,24 @@
 import { getTransferFeeConfig, Mint, TransferFee, TransferFeeConfig, unpackMint } from '@solana/spl-token'
 import {
-  AddressLookupTableAccount,
-  Connection,
-  EpochInfo,
-  Keypair,
-  PublicKey,
-  Signer,
-  Transaction,
-  TransactionInstruction,
-  TransactionMessage,
-  VersionedTransaction,
+    AddressLookupTableAccount,
+    Connection,
+    EpochInfo,
+    Keypair,
+    PublicKey,
+    Signer,
+    Transaction,
+    TransactionInstruction,
+    TransactionMessage,
+    VersionedTransaction,
 } from '@solana/web3.js'
 import BN from 'bn.js'
 
 import {
-  CacheLTA,
-  getMultipleAccountsInfoWithCustomFlags,
-  getMultipleLookupTableInfo,
-  splitTxAndSigners,
-  TOKEN_PROGRAM_ID,
+    CacheLTA,
+    getMultipleAccountsInfoWithCustomFlags,
+    getMultipleLookupTableInfo,
+    splitTxAndSigners,
+    TOKEN_PROGRAM_ID,
 } from '../common'
 import { CurrencyAmount, ONE, TokenAmount, ZERO } from '../entity'
 import { Spl } from '../spl'
@@ -143,7 +143,7 @@ export async function buildTransaction({
         .map((i) => i.toString()),
     ]),
   ]
-  const needCacheLTA = []
+  const needCacheLTA: any  = []
   for (const item of lta) {
     if (_lookupTableCache[item] === undefined) {
       needCacheLTA.push(new PublicKey(item))
