@@ -20,11 +20,7 @@
     "raydium",
     "solana"
   ],
-  "lint-staged": {
-    "{src,test,misc}/**/*.ts": [
-      "yarn lint"
-    ]
-  },
+  
   "scripts": {
     "lint": "eslint src/**/*.ts",
     "test": "jest",
@@ -36,9 +32,8 @@
     "build-all": "yarn build-dist && yarn build-lib",
     "install-peers": "ts-node ./misc/install-peers.ts",
     "build": "yarn build-lib",
-    "push": "yarn build && yarn publish",
-    "prepare": "husky install"
-  },
+    "push": "yarn build && yarn publish"
+    },
   "peerDependencies": {
     "@solana/web3.js": "^1.73.0"
   },
